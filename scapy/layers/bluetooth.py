@@ -670,6 +670,11 @@ class SM_Public_Key(Packet):
                    StrFixedLenField("key_y", b'\x00' * 32, 32), ]
 
 
+class SM_Security_Request(Packet):
+    name = "Security Request"
+    fields_desc = [BitField("authentication", 0, 8), ]
+    
+
 class SM_DHKey_Check(Packet):
     name = "DHKey Check"
     fields_desc = [StrFixedLenField("dhkey_check", b'\x00' * 16, 16), ]
@@ -1355,6 +1360,7 @@ bind_layers(SM_Hdr, SM_Master_Identification, sm_command=7)
 bind_layers(SM_Hdr, SM_Identity_Information, sm_command=8)
 bind_layers(SM_Hdr, SM_Identity_Address_Information, sm_command=9)
 bind_layers(SM_Hdr, SM_Signing_Information, sm_command=0x0a)
+bind_layers(SM_Hdr, SM_Security_Request, sm_command=0x0b)
 bind_layers(SM_Hdr, SM_Public_Key, sm_command=0x0c)
 bind_layers(SM_Hdr, SM_DHKey_Check, sm_command=0x0d)
 

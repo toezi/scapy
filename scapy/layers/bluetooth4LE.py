@@ -10,12 +10,12 @@ import struct
 
 from scapy.compat import orb, chb
 from scapy.config import conf
-from scapy.data import DLT_BLUETOOTH_LE_LL, DLT_BLUETOOTH_LE_LL_WITH_PHDR, \
+from scapy.data import DLT_BLUETOOTH_LE_LL, DLT_BLUETOOTH_LE_LL_WITH_PHDR, DLT_NORDIC_BLE, \
     PPI_BTLE
 from scapy.packet import Packet, bind_layers
 from scapy.fields import BitEnumField, BitField, ByteEnumField, ByteField, \
     Field, FlagsField, LEIntField, LEShortEnumField, LEShortField, \
-    MACField, PacketListField, SignedByteField, X3BytesField, XBitField, \
+    MACField, PacketListField, SignedByteField, StrFixedLenField, X3BytesField, XBitField, \
     XByteField, XIntField, XShortField, XLEIntField, XLELongField, \
     XLEShortField
 from scapy.contrib.ethercat import LEBitEnumField, LEBitField
@@ -98,6 +98,29 @@ class BTLE_RF(Packet):
         LEBitEnumField("phy", 0, 2, _PHY),
     ]
 
+class NORDIC_BLE(Packet):
+    """Cooked Nordic BTLE link-layer pseudoheader.
+    """
+    name = "BTLE Nordic info header"
+    fields_desc = [
+        ByteField("board", 0),
+        LEShortField("payload_len", None),
+        ByteField("protocol", 0),
+        LEShortField("packet_counter", 0),
+        ByteField("packet_id", 0),
+        ByteField("packet_len", 10),
+        ByteField("flags", 0),
+        ByteField("channel", 0),
+        ByteField("rssi", 0),
+        LEShortField("event_counter", 0),
+        LEIntField("delta_time", 0),
+    ]
+
+    def post_build(self, p, pay):
+        if self.payload_len is None:
+            p = p[:1] + chb((len(pay) + 10) % 256) + chb((len(pay) + 10) // 256) + p[3:]
+            self.payload_len = len(pay) + 10
+        return p + pay
 
 ##########
 # Fields #
@@ -229,11 +252,11 @@ class BTLE_ADV(Packet):
     fields_desc = [
         BitEnumField("RxAdd", 0, 1, {0: "public", 1: "random"}),
         BitEnumField("TxAdd", 0, 1, {0: "public", 1: "random"}),
-        BitField("RFU", 0, 2),  # Unused
+        BitField("ChSel", 0, 1),
+        BitField("RFU", 0, 1),  # Unused
         BitEnumField("PDU_type", 0, 4, {0: "ADV_IND", 1: "ADV_DIRECT_IND", 2: "ADV_NONCONN_IND", 3: "SCAN_REQ",  # noqa: E501
                                         4: "SCAN_RSP", 5: "CONNECT_REQ", 6: "ADV_SCAN_IND"}),  # noqa: E501
-        BitField("unused", 0, 2),  # Unused
-        XBitField("Length", None, 6),
+        ByteField("Length", None),
     ]
 
     def post_build(self, p, pay):
@@ -243,7 +266,9 @@ class BTLE_ADV(Packet):
                 l_pay = len(pay)
             else:
                 l_pay = 0
-            p = p[:1] + chb(l_pay & 0x3f) + p[2:]
+            self.Length = l_pay
+            p = p[:1] + chb(l_pay) + p[2:]
+
         if not isinstance(self.underlayer, BTLE):
             self.add_underlayer(BTLE)
         return p
@@ -252,7 +277,8 @@ class BTLE_ADV(Packet):
 class BTLE_DATA(Packet):
     name = "BTLE data header"
     fields_desc = [
-        BitField("RFU", 0, 3),  # Unused
+        BitField("RFU", 0, 2),  # Unused
+        BitField("CP", 0, 1), 
         BitField("MD", 0, 1),
         BitField("SN", 0, 1),
         BitField("NESN", 0, 1),
@@ -262,9 +288,28 @@ class BTLE_DATA(Packet):
 
     def post_build(self, p, pay):
         if self.len is None:
+            self.len = chb(len(pay))
             p = p[:-1] + chb(len(pay))
         return p + pay
 
+    def do_dissect_payload(self, s):
+        if s is not None:
+            cls = self.guess_payload_class(s)
+            try:
+                p = cls(s, _internal=1, _underlayer=self)
+            except KeyboardInterrupt:
+                raise
+            except Exception:
+                if conf.debug_dissector:
+                    if issubtype(cls, Packet):
+                        log_runtime.error("%s dissector failed" % cls.__name__)
+                    else:
+                        log_runtime.error("%s.guess_payload_class() returned [%s]" % (
+                            self.__class__.__name__, repr(cls)))  # noqa: E501
+                    if cls is not None:
+                        raise
+                p = conf.raw_layer(s, _internal=1, _underlayer=self)
+            self.add_payload(p)
 
 class BTLE_ADV_IND(Packet):
     name = "BTLE ADV_IND"
@@ -338,6 +383,7 @@ BTLE_Versions = {
     9: '5.0',
     10: '5.1',
     11: '5.2',
+    12: '5.3',
 }
 
 
@@ -352,24 +398,26 @@ BTLE_BTLE_CTRL_opcode = {
     0x01: 'LL_CHANNEL_MAP_REQ',
     0x02: 'LL_TERMINATE_IND',
     0x03: 'LL_ENC_REQ',
-    0x04: 'LL_ENC_RSP',
+    0x04: 'LL_ENC_RES',
     0x05: 'LL_START_ENC_REQ',
-    0x06: 'LL_START_ENC_RSP',
+    0x06: 'LL_START_ENC_RES',
     0x07: 'LL_UNKNOWN_RSP',
     0x08: 'LL_FEATURE_REQ',
-    0x09: 'LL_FEATURE_RSP',
+    0x09: 'LL_FEATURE_RSP',  # OK
     0x0A: 'LL_PAUSE_ENC_REQ',
-    0x0B: 'LL_PAUSE_ENC_RSP',
-    0x0C: 'LL_VERSION_IND',
+    0x0B: 'LL_PAUSE_ENC_RES',
+    0x0C: 'LL_VERSION_IND',  # OK
     0x0D: 'LL_REJECT_IND',
     0x0E: 'LL_SLAVE_FEATURE_REQ',
     0x0F: 'LL_CONNECTION_PARAM_REQ',
-    0x10: 'LL_CONNECTION_PARAM_RSP',
+    0x10: 'LL_CONNECTION_PARAM_RES',
+    0x11: 'LL_REJECT_EXT_IND',
     0x14: 'LL_LENGTH_REQ',
     0x15: 'LL_LENGTH_RSP',
     0x16: 'LL_PHY_REQ',
     0x17: 'LL_PHY_RSP',
     0x18: 'LL_PHY_UPDATE_IND',
+    0x19: 'LL_MIN_USED_CHANNELS_IND'
 }
 
 
@@ -382,6 +430,24 @@ class BTLE_CTRL(Packet):
     fields_desc = [
         ByteEnumField("opcode", 0, BTLE_BTLE_CTRL_opcode)
     ]
+    def do_dissect_payload(self, s):
+        if s is not None:
+            cls = self.guess_payload_class(s)
+            try:
+                p = cls(s, _internal=1, _underlayer=self)
+            except KeyboardInterrupt:
+                raise
+            except Exception:
+                if conf.debug_dissector:
+                    if issubtype(cls, Packet):
+                        log_runtime.error("%s dissector failed" % cls.__name__)
+                    else:
+                        log_runtime.error("%s.guess_payload_class() returned [%s]" % (
+                            self.__class__.__name__, repr(cls)))  # noqa: E501
+                    if cls is not None:
+                        raise
+                p = conf.raw_layer(s, _internal=1, _underlayer=self)
+            self.add_payload(p)
 
 
 class LL_CONNECTION_UPDATE_IND(Packet):
@@ -414,24 +480,23 @@ class LL_TERMINATE_IND(Packet):
 class LL_ENC_REQ(Packet):
     name = 'LL_ENC_REQ'
     fields_desc = [
-        XLELongField("rand", 0),
-        XLEShortField("ediv", 0),
-        XLELongField("skdm", 0),
-        XLEIntField("ivm", 0),
+        StrFixedLenField("rand", "", length=8),
+        StrFixedLenField("ediv", "", length=2),
+        StrFixedLenField("skdm", "", length=8),
+        StrFixedLenField("ivm", "", length=4),
     ]
 
 
 class LL_ENC_RSP(Packet):
     name = 'LL_ENC_RSP'
     fields_desc = [
-        XLELongField("skds", 0),
-        XLEIntField("ivs", 0),
+        StrFixedLenField("skds", "", length=8),
+        StrFixedLenField("ivs", "", length=4),
     ]
 
 
 class LL_START_ENC_REQ(Packet):
     name = 'LL_START_ENC_REQ'
-    fields_desc = []
 
 
 class LL_START_ENC_RSP(Packet):
@@ -581,8 +646,8 @@ class LL_PHY_RSP(Packet):
 class LL_PHY_UPDATE_IND(Packet):
     name = "LL_PHY_UPDATE_IND"
     fields_desc = [
-        BTLEPhysField('tx_phy', 0),
-        BTLEPhysField('rx_phy', 0),
+        BTLEPhysField('M_TO_S_PHY', 0),
+        BTLEPhysField('S_TO_M_PHY', 0),
         XShortField("instant", 0x0),
     ]
 
@@ -641,7 +706,9 @@ bind_layers(BTLE_CTRL, LL_MIN_USED_CHANNELS_IND, opcode=0x19)
 
 conf.l2types.register(DLT_BLUETOOTH_LE_LL, BTLE)
 conf.l2types.register(DLT_BLUETOOTH_LE_LL_WITH_PHDR, BTLE_RF)
+conf.l2types.register(DLT_NORDIC_BLE, NORDIC_BLE)
+
 
 bind_layers(BTLE_RF, BTLE)
-
+bind_layers(NORDIC_BLE, BTLE)
 bind_layers(PPI_Hdr, BTLE_PPI, pfh_type=PPI_BTLE)
