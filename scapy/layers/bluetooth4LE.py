@@ -428,7 +428,7 @@ class BTLE_EMPTY_PDU(Packet):
 class BTLE_CTRL(Packet):
     name = "BTLE_CTRL"
     fields_desc = [
-        ByteEnumField("opcode", 0, BTLE_BTLE_CTRL_opcode)
+        ByteEnumField("optcode", 0, BTLE_BTLE_CTRL_opcode)
     ]
     def do_dissect_payload(self, s):
         if s is not None:
@@ -453,12 +453,12 @@ class BTLE_CTRL(Packet):
 class LL_CONNECTION_UPDATE_IND(Packet):
     name = 'LL_CONNECTION_UPDATE_IND'
     fields_desc = [
-        XByteField("win_size", 0),
-        XLEShortField("win_offset", 0),
-        XLEShortField("interval", 6),
-        XLEShortField("latency", 0),
-        XLEShortField("timeout", 50),
-        XLEShortField("instant", 6),
+        XByteField("win_size", 0x0), #1octet
+        XLEShortField("win_offset", 0x0), #2octet
+        XLEShortField("interval", 0x0),
+        XLEShortField("latency", 0x0),
+        XLEShortField("timeout", 0x0),
+        XLEShortField("instant", 0x0),
     ]
 
 
@@ -558,45 +558,45 @@ class LL_SLAVE_FEATURE_REQ(Packet):
 class LL_CONNECTION_PARAM_REQ(Packet):
     name = "LL_CONNECTION_PARAM_REQ"
     fields_desc = [
-        XShortField("interval_min", 0x6),
-        XShortField("interval_max", 0x6),
-        XShortField("latency", 0x0),
-        XShortField("timeout", 0x0),
-        XByteField("preferred_periodicity", 0x0),
-        XShortField("reference_conn_evt_count", 0x0),
-        XShortField("offset0", 0x0),
-        XShortField("offset1", 0x0),
-        XShortField("offset2", 0x0),
-        XShortField("offset3", 0x0),
-        XShortField("offset4", 0x0),
-        XShortField("offset5", 0x0),
+        XShortField("Interval_Max", 0x6),
+        XShortField("Interval_Min", 0x6),
+        XShortField("Latency", 0x0),
+        XShortField("Timeout", 0x0),
+        XByteField("PreferredPeriodicity", 0x0),
+        XShortField("ReferenceConnEventCount", 0x0),
+        XShortField("Offset0", 0x0),
+        XShortField("Offset1", 0x0),
+        XShortField("Offset2", 0x0),
+        XShortField("Offset3", 0x0),
+        XShortField("Offset4", 0x0),
+        XShortField("Offset5", 0x0),
     ]
 
 
 class LL_CONNECTION_PARAM_RSP(Packet):
     name = "LL_CONNECTION_PARAM_RSP"
     fields_desc = [
-        XShortField("interval_min", 0x6),
-        XShortField("interval_max", 0x6),
-        XShortField("latency", 0x0),
-        XShortField("timeout", 0x0),
-        XByteField("preferred_periodicity", 0x0),
-        XShortField("reference_conn_evt_count", 0x0),
-        XShortField("offset0", 0x0),
-        XShortField("offset1", 0x0),
-        XShortField("offset2", 0x0),
-        XShortField("offset3", 0x0),
-        XShortField("offset4", 0x0),
-        XShortField("offset5", 0x0),
+        XShortField("Interval_Max", 0x6),
+        XShortField("Interval_Min", 0x6),
+        XShortField("Latency", 0x0),
+        XShortField("Timeout", 0x0),
+        XByteField("PreferredPeriodicity", 0x0),
+        XShortField("ReferenceConnEventCount", 0x0),
+        XShortField("Offset0", 0x0),
+        XShortField("Offset1", 0x0),
+        XShortField("Offset2", 0x0),
+        XShortField("Offset3", 0x0),
+        XShortField("Offset4", 0x0),
+        XShortField("Offset5", 0x0),
     ]
 
 
 class LL_REJECT_EXT_IND(Packet):
     name = "LL_REJECT_EXT_IND"
     fields_desc = [
-        XByteField("reject_opcode", 0x0),
-        XByteField("error_code", 0x0),
-    ]
+        XByteField("RejectOpcode", 0x0),
+        XByteField("ErrorCode", 0x0),
+    ]   
 
 
 class LL_PING_REQ(Packet):
@@ -630,16 +630,16 @@ class LL_LENGTH_RSP(Packet):
 class LL_PHY_REQ(Packet):
     name = "LL_PHY_REQ"
     fields_desc = [
-        BTLEPhysField('tx_phys', 0),
-        BTLEPhysField('rx_phys', 0),
+        BTLEPhysField('TX_PHYS', 0),
+        BTLEPhysField('RX_PHYS', 0),
     ]
 
 
 class LL_PHY_RSP(Packet):
     name = "LL_PHY_RSP"
     fields_desc = [
-        BTLEPhysField('tx_phys', 0),
-        BTLEPhysField('rx_phys', 0),
+        BTLEPhysField('TX_PHYS', 0),
+        BTLEPhysField('RX_PHYS', 0),
     ]
 
 
@@ -655,8 +655,8 @@ class LL_PHY_UPDATE_IND(Packet):
 class LL_MIN_USED_CHANNELS_IND(Packet):
     name = "LL_MIN_USED_CHANNELS_IND"
     fields_desc = [
-        BTLEPhysField('phys', 0),
-        ByteField("min_used_channels", 2),
+        BTLEPhysField('PHYS', 0),
+        ByteField("MinUsedChannels", 2),
     ]
 
 
@@ -676,32 +676,32 @@ bind_layers(BTLE_ADV, BTLE_ADV_SCAN_IND, PDU_type=6)
 bind_layers(BTLE_DATA, L2CAP_Hdr, LLID=2)
 bind_layers(BTLE_DATA, BTLE_CTRL, LLID=3)
 bind_layers(BTLE_DATA, BTLE_EMPTY_PDU, {'len': 0, 'LLID': 1})
-bind_layers(BTLE_CTRL, LL_CONNECTION_UPDATE_IND, opcode=0x00)
-bind_layers(BTLE_CTRL, LL_CHANNEL_MAP_IND, opcode=0x01)
-bind_layers(BTLE_CTRL, LL_TERMINATE_IND, opcode=0x02)
-bind_layers(BTLE_CTRL, LL_ENC_REQ, opcode=0x03)
-bind_layers(BTLE_CTRL, LL_ENC_RSP, opcode=0x04)
-bind_layers(BTLE_CTRL, LL_START_ENC_REQ, opcode=0x05)
-bind_layers(BTLE_CTRL, LL_START_ENC_RSP, opcode=0x06)
-bind_layers(BTLE_CTRL, LL_UNKNOWN_RSP, opcode=0x07)
-bind_layers(BTLE_CTRL, LL_FEATURE_REQ, opcode=0x08)
-bind_layers(BTLE_CTRL, LL_FEATURE_RSP, opcode=0x09)
-bind_layers(BTLE_CTRL, LL_PAUSE_ENC_REQ, opcode=0x0A)
-bind_layers(BTLE_CTRL, LL_PAUSE_ENC_RSP, opcode=0x0B)
-bind_layers(BTLE_CTRL, LL_VERSION_IND, opcode=0x0C)
-bind_layers(BTLE_CTRL, LL_REJECT_IND, opcode=0x0D)
-bind_layers(BTLE_CTRL, LL_SLAVE_FEATURE_REQ, opcode=0x0E)
-bind_layers(BTLE_CTRL, LL_CONNECTION_PARAM_REQ, opcode=0x0F)
-bind_layers(BTLE_CTRL, LL_CONNECTION_PARAM_RSP, opcode=0x10)
-bind_layers(BTLE_CTRL, LL_REJECT_EXT_IND, opcode=0x11)
-bind_layers(BTLE_CTRL, LL_PING_REQ, opcode=0x12)
-bind_layers(BTLE_CTRL, LL_PING_RSP, opcode=0x13)
-bind_layers(BTLE_CTRL, LL_LENGTH_REQ, opcode=0x14)
-bind_layers(BTLE_CTRL, LL_LENGTH_RSP, opcode=0x15)
-bind_layers(BTLE_CTRL, LL_PHY_REQ, opcode=0x16)
-bind_layers(BTLE_CTRL, LL_PHY_RSP, opcode=0x17)
-bind_layers(BTLE_CTRL, LL_PHY_UPDATE_IND, opcode=0x18)
-bind_layers(BTLE_CTRL, LL_MIN_USED_CHANNELS_IND, opcode=0x19)
+bind_layers(BTLE_CTRL, LL_CONNECTION_UPDATE_IND, optcode=0x00)
+bind_layers(BTLE_CTRL, LL_CHANNEL_MAP_IND, optcode=0x01)
+bind_layers(BTLE_CTRL, LL_TERMINATE_IND, optcode=0x02)
+bind_layers(BTLE_CTRL, LL_ENC_REQ, optcode=0x03)
+bind_layers(BTLE_CTRL, LL_ENC_RSP, optcode=0x04)
+bind_layers(BTLE_CTRL, LL_START_ENC_REQ, optcode=0x05)
+bind_layers(BTLE_CTRL, LL_START_ENC_RSP, optcode=0x06)
+bind_layers(BTLE_CTRL, LL_UNKNOWN_RSP, optcode=0x07)
+bind_layers(BTLE_CTRL, LL_FEATURE_REQ, optcode=0x08)
+bind_layers(BTLE_CTRL, LL_FEATURE_RSP, optcode=0x09)
+bind_layers(BTLE_CTRL, LL_PAUSE_ENC_REQ, optcode=0x0A)
+bind_layers(BTLE_CTRL, LL_PAUSE_ENC_RSP, optcode=0x0B)
+bind_layers(BTLE_CTRL, LL_VERSION_IND, optcode=0x0C)
+bind_layers(BTLE_CTRL, LL_REJECT_IND, optcode=0x0D)
+bind_layers(BTLE_CTRL, LL_SLAVE_FEATURE_REQ, optcode=0x0E)
+bind_layers(BTLE_CTRL, LL_CONNECTION_PARAM_REQ, optcode=0x0F)
+bind_layers(BTLE_CTRL, LL_CONNECTION_PARAM_RSP, optcode=0x10)
+bind_layers(BTLE_CTRL, LL_REJECT_EXT_IND, optcode=0x11)
+bind_layers(BTLE_CTRL, LL_PING_REQ, optcode=0x12)
+bind_layers(BTLE_CTRL, LL_PING_RSP, optcode=0x13)
+bind_layers(BTLE_CTRL, LL_LENGTH_REQ, optcode=0x14)
+bind_layers(BTLE_CTRL, LL_LENGTH_RSP, optcode=0x15)
+bind_layers(BTLE_CTRL, LL_PHY_REQ, optcode=0x16)
+bind_layers(BTLE_CTRL, LL_PHY_RSP, optcode=0x17)
+bind_layers(BTLE_CTRL, LL_PHY_UPDATE_IND, optcode=0x18)
+bind_layers(BTLE_CTRL, LL_MIN_USED_CHANNELS_IND, optcode=0x19)
 
 
 conf.l2types.register(DLT_BLUETOOTH_LE_LL, BTLE)

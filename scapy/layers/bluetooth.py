@@ -234,12 +234,12 @@ class HCI_ACL_Hdr(Packet):
 
 class L2CAP_Hdr(Packet):
     name = "L2CAP header"
-    fields_desc = [LEShortField("len", None),
+    fields_desc = [LEShortField("l2cap_len", None),
                    LEShortEnumField("cid", 0, {1: "control", 4: "attribute"}), ]  # noqa: E501
 
     def post_build(self, p, pay):
         p += pay
-        if self.len is None:
+        if self.l2cap_len is None:
             p = struct.pack("<H", len(pay)) + p[2:]
         return p
 
