@@ -644,7 +644,7 @@ class SM_Encryption_Information(Packet):
 
 class SM_Master_Identification(Packet):
     name = "Master Identification"
-    fields_desc = [XLEShortField("ediv", 0),
+    fields_desc = [StrFixedLenField("ediv", b'\x00' * 2, 2),
                    StrFixedLenField("rand", b'\x00' * 8, 8), ]
 
 

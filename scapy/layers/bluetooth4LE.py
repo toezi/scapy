@@ -171,7 +171,32 @@ class BTLEFeatureField(FlagsField):
              'le_ext_adv',
              'le_periodic_adv',
              'ch_sel_alg',
-             'le_pwr_class']
+             'le_pwr_class',
+             'min_num_procedure',
+             'CTE_req',
+             'CTE_res',
+             'CTE_TRANS',
+             'CTE_REC',
+             'AoD',
+             'AoA',
+             'rx_CTE',
+             'tx_per_snyc',
+             'rx_per_sync',
+             'sleep_clock_acur',
+             'public_key_val',
+             'CIS_cent',
+             'CIS_per',
+             'ISO_broad',
+             'sync_rec',
+             'CIS_str',
+             'pwr_ctrl_req_1',
+             'pwr_ctrl_req_2',
+             'path_loss',
+             'per_adv',
+             'sub_conn',
+             'sub_conn_host',
+             'channel_class',
+             ]
         )
 
 
@@ -558,36 +583,36 @@ class LL_SLAVE_FEATURE_REQ(Packet):
 class LL_CONNECTION_PARAM_REQ(Packet):
     name = "LL_CONNECTION_PARAM_REQ"
     fields_desc = [
-        XShortField("Interval_Max", 0x6),
-        XShortField("Interval_Min", 0x6),
-        XShortField("Latency", 0x0),
-        XShortField("Timeout", 0x0),
+        XLEShortField("Interval_Min", 0x6),
+        XLEShortField("Interval_Max", 0x6),
+        XLEShortField("Latency", 0x0),
+        XLEShortField("Timeout", 0x0),
         XByteField("PreferredPeriodicity", 0x0),
-        XShortField("ReferenceConnEventCount", 0x0),
-        XShortField("Offset0", 0x0),
-        XShortField("Offset1", 0x0),
-        XShortField("Offset2", 0x0),
-        XShortField("Offset3", 0x0),
-        XShortField("Offset4", 0x0),
-        XShortField("Offset5", 0x0),
+        XLEShortField("ReferenceConnEventCount", 0x0),
+        XLEShortField("Offset0", 0x0),
+        XLEShortField("Offset1", 0x0),
+        XLEShortField("Offset2", 0x0),
+        XLEShortField("Offset3", 0x0),
+        XLEShortField("Offset4", 0x0),
+        XLEShortField("Offset5", 0x0),
     ]
 
 
 class LL_CONNECTION_PARAM_RSP(Packet):
     name = "LL_CONNECTION_PARAM_RSP"
     fields_desc = [
-        XShortField("Interval_Max", 0x6),
-        XShortField("Interval_Min", 0x6),
-        XShortField("Latency", 0x0),
-        XShortField("Timeout", 0x0),
+        XLEShortField("Interval_Min", 0x6),
+        XLEShortField("Interval_Max", 0x6),
+        XLEShortField("Latency", 0x0),
+        XLEShortField("Timeout", 0x0),
         XByteField("PreferredPeriodicity", 0x0),
-        XShortField("ReferenceConnEventCount", 0x0),
-        XShortField("Offset0", 0x0),
-        XShortField("Offset1", 0x0),
-        XShortField("Offset2", 0x0),
-        XShortField("Offset3", 0x0),
-        XShortField("Offset4", 0x0),
-        XShortField("Offset5", 0x0),
+        XLEShortField("ReferenceConnEventCount", 0x0),
+        XLEShortField("Offset0", 0x0),
+        XLEShortField("Offset1", 0x0),
+        XLEShortField("Offset2", 0x0),
+        XLEShortField("Offset3", 0x0),
+        XLEShortField("Offset4", 0x0),
+        XLEShortField("Offset5", 0x0),
     ]
 
 
@@ -648,7 +673,7 @@ class LL_PHY_UPDATE_IND(Packet):
     fields_desc = [
         BTLEPhysField('M_TO_S_PHY', 0),
         BTLEPhysField('S_TO_M_PHY', 0),
-        XShortField("instant", 0x0),
+        XLEShortField("instant", 0x0),
     ]
 
 
